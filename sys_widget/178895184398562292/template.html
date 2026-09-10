@@ -1,0 +1,85 @@
+<div id="activity-box" class="activity-main" simple-if="{data.isActivityVisible}">
+  <div class="activity-header" event-click="s_widget_custom.toggleActivity()">
+    <div class="activity-header-title">{data.translations.activity_feed_title} ({data.activity_records_count})</div>
+    <div id="activity-chevron" class="activity-chevron">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          fill-rule="evenodd"
+          clip-rule="evenodd"
+          d="M5.29289 8.29289C5.68342 7.90237 6.31658 7.90237 6.70711 8.29289L12 13.5858L17.2929 8.29289C17.6834 7.90237 18.3166 7.90237 18.7071 8.29289C19.0976 8.68342 19.0976 9.31658 18.7071 9.70711L12.7071 15.7071C12.3166 16.0976 11.6834 16.0976 11.2929 15.7071L5.29289 9.70711C4.90237 9.31658 4.90237 8.68342 5.29289 8.29289Z"
+          fill="#2E3238"></path>
+      </svg>
+    </div>
+    <div class="activity-loader" simple-if="{data.isLoaderVisible}"></div>
+  </div>
+  <div class="comment-block" simple-if="{data.isCommentBlockVisible}">
+    <div class="comment-block-flex">
+      <div class="comment-block-flex-first-row">
+        <select radioButtonsMode="true" class="select-work-note-or-comment" model="data.commentTypeOption" options="{data.commentTypeOptions}"></select>
+        <span class="comment-block-flex-first-row-btn">
+          <button simple-if="{data.isCommentHintVisible}"
+            class="src-components-button-___styles-module__IconMini___DVKTd src-components-dynamicForms-view-fieldWrapper-___styles-module__BtnIcon___rzdZS"
+            type="button"
+            tabindex="20"
+            hint="<Рабочие записи> – для заметок: они не передаются в ремеди, не отображаются на портальной версии и не влияют на объект. 
+<Дополнительные комментарии> – для передачи информации о ходе работ: они видны инициатору на портале и синхронизируются между системами"
+            disabled="true"
+            data-test="icon-mini">
+            <span class="">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d="M12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3ZM1 12C1 5.92487 5.92487 1 12 1C18.0751 1 23 5.92487 23 12C23 18.0751 18.0751 23 12 23C5.92487 23 1 18.0751 1 12Z"
+                  fill="0b0c0e !important;"></path>
+                <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d="M12.2581 8.02432C11.7926 7.94447 11.3138 8.03195 10.9066 8.27127C10.4994 8.51058 10.1901 8.88629 10.0333 9.33184C9.85006 9.85283 9.27915 10.1266 8.75816 9.94333C8.23717 9.76006 7.96339 9.18915 8.14667 8.66816C8.46014 7.77705 9.07887 7.02563 9.89327 6.547C10.7077 6.06837 11.6652 5.89341 12.5962 6.05311C13.5273 6.2128 14.3718 6.69686 14.9801 7.41953C15.5883 8.14205 15.9213 9.05648 15.92 10.0009C15.9197 11.0711 15.3569 11.889 14.7751 12.4464C14.1931 13.004 13.5031 13.3909 13.0159 13.6243C12.977 13.6429 12.9487 13.6696 12.933 13.6926C12.9257 13.7033 12.9225 13.7113 12.9211 13.7154C12.92 13.719 12.92 13.7207 12.92 13.7207V14C12.92 14.5523 12.4723 15 11.92 15C11.3677 15 10.92 14.5523 10.92 14V13.7208C10.92 12.8509 11.4686 12.1479 12.1518 11.8206C12.5483 11.6307 13.0263 11.3522 13.3915 11.0023C13.7567 10.6523 13.92 10.321 13.92 10L13.92 9.99851C13.9207 9.52619 13.7542 9.06886 13.4501 8.70753C13.1459 8.34619 12.7236 8.10417 12.2581 8.02432Z"
+                  fill="0b0c0e !important;"></path>
+                <path d="M13 17C13 17.5523 12.5523 18 12 18C11.4477 18 11 17.5523 11 17C11 16.4477 11.4477 16 12 16C12.5523 16 13 16.4477 13 17Z" fill="0b0c0e !important;"></path>
+              </svg>
+            </span>
+          </button>
+        </span>
+      </div>
+
+      <textarea id="user-comment" model="data.comment" placeholder="{data.translations.enter_your_message}" disabled="{data.add_comment_disabled}"></textarea>
+    </div>
+
+    <div class="comment-button">
+      <button id="add-comment" class="active-button" disabled="{data.add_comment_disabled}" event-click="s_widget_custom.addComment()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            fill="#fff"
+            d="M22.0933 11.9935C22.0916 11.8032 22.0333 11.6178 21.9257 11.4607C21.8182 11.3037 21.6664 11.1823 21.4896 11.1119L3.28124 2.33353C3.10799 2.25108 2.91399 2.22253 2.72433 2.25158C2.53468 2.28062 2.35811 2.36593 2.21749 2.49645C2.08016 2.62422 1.98334 2.78949 1.93905 2.97177C1.89476 3.15405 1.90494 3.34532 1.96832 3.52186L5.22665 11.9935L1.96832 20.4652C1.90079 20.6443 1.88844 20.8395 1.93284 21.0257C1.97725 21.2118 2.07639 21.3805 2.21749 21.5098C2.35916 21.6387 2.53623 21.7223 2.72584 21.7496C2.91546 21.7769 3.10891 21.7468 3.28124 21.6631L21.4896 12.8848C21.6679 12.8138 21.8208 12.6908 21.9284 12.5319C22.0361 12.373 22.0935 12.1855 22.0933 11.9935ZM16.9375 12.9519L4.60374 18.8839L6.88457 12.9519L7.25832 11.9935L6.88457 11.0352L4.60374 5.10311L16.9375 11.0352L18.9692 11.9935L16.9375 12.9519Z"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="activity-content" simple-show="{data.isActivityContentVisible}">
+    <div class="separator"></div>
+    <div class="activity-tabs">
+      <div id="tab-email" class="activity-tab" event-click="s_widget_custom.filter('email')">📫 {data.translations.email_conversation}</div>
+      <div id="tab-additional-comments" class="activity-tab" event-click="s_widget_custom.filter('additional-comments')" simple-if="{data.isAdditionalCommentsTabVisible}">💬 {data.translations.additional_comments}</div>
+      <div id="tab-work-notes" class="activity-tab" event-click="s_widget_custom.filter('work-notes')" simple-if="{data.isWorkNotesTabVisible}">📝 {data.translations.work_notes}</div>
+      <div id="tab-history" class="activity-tab" event-click="s_widget_custom.filter('history')">📖 {data.translations.changes_history}</div>
+      <div id="tab-deadline" class="activity-tab" event-click="s_widget_custom.filter('deadline')" simple-if="{data.isDeadlineTabVisible}">📆 {data.translations.deadline}</div>
+      <div id="tab-all" class="activity-tab tab-active" event-click="s_widget_custom.filter('all')">📦 {data.translations.all_activity_feed_items}</div>
+    </div>
+    <div id="activity-feed" class="activity-feed"></div>
+  </div>
+</div>
+<modal id="email-modal" simple-if="{data.show_email_modal}" isShow="{data.show_modal}" title="{data.current_email_modal_title}" doClose="s_widget_custom.destroyModal()">
+  <div class="email-modal">
+    <div class="email-attach-title">Вложения:</div>
+    <div id="email-attachments"></div>
+    <div id="email-body" class="email-body-wrapper"></div>
+  </div>
+</modal>
+<modal id="comment-modal" simple-if="{data.show_comment_modal}" isShow="{data.show_comment_img_modal}" doClose="s_widget_custom.destroyModal()">
+  <div class="comment-modal">
+    <div id="comment-body" class="comment-body"></div>
+  </div>
+</modal>
