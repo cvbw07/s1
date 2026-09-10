@@ -325,7 +325,7 @@ function getEmailConversationData() {
     } else {
       emailBody = emailRecord.body_html.replace(/'/g, '&#39;').replace('<!DOCTYPE html>', '<!DOCTYPE html "">'); // DOCTYPE replace - workaround INC0008366
     }
-    const emailSubject = emailRecord.subject;
+    const emailSubject = escapeSpecialSymbols(emailRecord.subject);
     const emailAttachmentsAamount = emailRecord.c_attachments_amount;
     emailsObject[emailId] = {
       email_body: emailBody,
@@ -339,13 +339,15 @@ function getEmailConversationData() {
       carbon_copy: makeDisplayName(emailRecord.carbon_copy),
       sys_created_at_display: emailRecord.getDisplayValue('created_on_server_at') || emailRecord.getDisplayValue('sys_created_at'),
       subject: emailSubject,
-      attachments: emailAttachmentsAamount,
       sys_id: emailId,
+      attachments: emailAttachmentsAamount,
     });
   }
 }
 
 function getCurrentLangChoiceFieldDisplayValue(tableId, columnId, dbValue, displayValue) {
+  const userLanguage = new SimpleUser().getContext().language_id.language;
+
   if (displayValue === '--None--' && userLanguage === 'ru') {
     return '--Нет--';
   } else if (displayValue === '--Нет--' && userLanguage === 'en') {

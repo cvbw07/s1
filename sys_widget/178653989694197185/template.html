@@ -69,12 +69,14 @@
           </button>
         </span>
       </div>
+
       <div class="activity-wt">
         <duration label="Трудозатраты" model="data.duration" isMandatory="{data.isDurationMandatory}" event-change="s_widget_custom.durationChanges()"></duration>
         <!-- <string class="disabled" label="Трудозатраты в ч/д" model="data.durationDays" isMandatory="{data.isDurationMandatory}"></string> -->
       </div>
       <textarea id="user-comment" model="data.comment" placeholder="{data.translations.enter_your_message}" event-change="s_widget_custom.commentChanges()"></textarea>
     </div>
+
     <div class="comment-button">
       <button id="add-comment" class="active-button" disabled="{data.isAddCommentButtonDisabled}" event-click="s_widget_custom.addComment()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
