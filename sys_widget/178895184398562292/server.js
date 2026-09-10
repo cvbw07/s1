@@ -54,17 +54,17 @@ let emailConversation = 'email_conversation';
   }
 
   if (input.action === 'ADD_COMMENT') {
-    data.action = '';
     data.comment = '';
 
     const { database_value: commentType } = input.commentTypeOption;
+    const comment = input.comment;
 
     if (commentType === 'work-notes') {
-      record[workNotes] = input.comment;
+      record[workNotes] = comment;
     }
 
     if (commentType === 'additional-comments') {
-      record[additionalComments] = input.comment;
+      record[additionalComments] = comment;
     }
 
     record.update();
@@ -110,7 +110,7 @@ function setCommentTypeOptions(record) {
   if (attributes.hasOwnProperty(workNotes) && (ss.hasRole('ITSM_agent') || ss.hasRole('service_manager'))) {
     const option = {
       database_value: 'work-notes',
-      display_value: data.translations.work_notes
+      display_value: data.translations.work_notes,
     };
 
     options.push(option);
@@ -122,7 +122,7 @@ function setCommentTypeOptions(record) {
   if (attributes.hasOwnProperty(additionalComments)) {
     const option = {
       database_value: 'additional-comments',
-      display_value: data.translations.additional_comments
+      display_value: data.translations.additional_comments,
     };
 
     options.push(option);
@@ -317,11 +317,8 @@ function getEmailConversationData() {
     } else {
       emailBody = emailRecord.body_html.replace(/'/g, '&#39;').replace('<!DOCTYPE html>', '<!DOCTYPE html "">'); // DOCTYPE replace - workaround INC0008366
     }
-    const emailSubject = emailRecord.subject;
+    const emailSubject = escapeSpecialSymbols(emailRecord.subject);
     const emailAttachmentsAamount = emailRecord.c_attachments_amount;
-    const emailCreationDateTime = emailRecord.created_on_server_at
-      ? emailRecord.getDisplayValue('created_on_server_at')
-      : emailRecord.getDisplayValue('sys_created_at');
     emailsObject[emailId] = {
       email_body: emailBody,
       email_subject: emailSubject,
@@ -332,7 +329,7 @@ function getEmailConversationData() {
       from: makeDisplayName(emailRecord.from),
       to: makeDisplayName(emailRecord.to),
       carbon_copy: makeDisplayName(emailRecord.carbon_copy),
-      email_creation_date_time: emailCreationDateTime,
+      sys_created_at_display: emailRecord.getDisplayValue('created_on_server_at') || emailRecord.getDisplayValue('sys_created_at'),
       subject: emailSubject,
       sys_id: emailId,
       attachments: emailAttachmentsAamount,
@@ -475,7 +472,7 @@ function getAvailableColumnIds() {
     .getProperty(`${getPropertyPrefix()}.activity_column_filter_ids`)
     .replace(/\s+/g, '')
     .split(',')
-    .filter((id) => id);
+    .filter(id => id);
 }
 
 function getPropertyPrefix() {
@@ -549,7 +546,6 @@ function escapeSpecialSymbols(text) {
     '"': '&quot;',
     "'": '&#039;',
   };
-  return text.replace(/[&<>"']/g, function (m) {
-    return map[m];
-  });
+
+  return text.replace(/[&<>"']/g, symbol => map[symbol]);
 }

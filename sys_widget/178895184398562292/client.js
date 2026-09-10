@@ -1,12 +1,3 @@
-const AVATAR_SVG = `
-<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 40 40">
-	<path fill="#E1E1E1" d="M20 0C8.96 0 0 8.96 0 20s8.96 20 20 20 20-8.96 20-20S31.04 0 20 0zm0 6c3.32 0 6 2.68 6 6s-2.68 6-6 6-6-2.68-6-6 2.68-6 6-6zm0 28.4c-5 0-9.42-2.56-12-6.44.06-3.98 8-6.16 12-6.16 3.98 0 11.94 2.18 12 6.16-2.58 3.88-7 6.44-12 6.44z"></path>
-</svg>`;
-const WORK_NOTES_EMJ = `<span class="emoji">📝</span>`;
-const ADDITIONAL_COMMENTS_EMJ = `<span class="emoji">💬</span>`;
-const HISTORY_BOOK_EMJ = `<span class="emoji">📖</span>`;
-const EMAIL_ICON_EMJ = `<span class="emoji">📫</span>`;
-const DEADLINE_ICON_EMJ = `<span class="emoji">📆</span>`;
 const EMAIL_SVG = `
 <svg fill="#000000" height="32px" width="32px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
 	<path d="M58.0034485,8H5.9965506c-3.3136795,0-5.9999995,2.6862001-5.9999995,6v36c0,3.3137016,2.6863203,6,5.9999995,6
@@ -30,12 +21,13 @@ const LOADER = `
 let activityGroups = [];
 let activityRecordsCount = 0;
 let activityObject;
+let activityRecordList;
 let currentActivityRecordList;
 
 (async () => {
   await init();
 
-  s_widget_custom.downloadAttach = async (attachId) => {
+  s_widget_custom.downloadAttach = (attachId) => {
     const attachmentURL = `/attachments/download/${attachId}?access-token=${s_user.accessToken}`;
     window.location = `${API_BASE_URL}${attachmentURL}`;
   }
@@ -59,7 +51,13 @@ let currentActivityRecordList;
     document.getElementById('email-body').insertAdjacentHTML('afterbegin', emailsObject[emailBodyId].email_body);
   }
 
-  s_widget_custom.openEmailLink = function (emailBodyId) {
+  s_widget_custom.showMoreContent = (event, index) => {
+    event.target.closest('.activity-item').hidden = true;
+    const showMoreContentIndex = Math.ceil(index / 100) - 1;
+    updateActivityFeedItems(index, `activity-feed-show-more-content-${showMoreContentIndex}`);
+  }
+
+  s_widget_custom.openEmailLink = (emailBodyId) => {
     s_go.open(`/record/sys_email/${emailBodyId}`, '_blank', () => { });
   }
 
@@ -71,43 +69,31 @@ let currentActivityRecordList;
     s_widget.removeTemplate('email-attachments');
   }
 
-  s_widget_custom.toggleActivity = async function () {
-    const chevron = document.getElementById('activity-chevron');
-    if (chevron.classList.contains('activity-chevron-right')) {
-      chevron.classList.remove('activity-chevron-right');
-      s_widget.setFieldValue('isActivityContentVisible', true);
-    } else {
-      chevron.classList.add('activity-chevron-right');
-      s_widget.setFieldValue('isActivityContentVisible', false);
-    }
+  s_widget_custom.toggleActivityContentVisibility = () => {
+    s_widget.setFieldValue('isActivityContentVisible', !s_widget.getFieldValue('isActivityContentVisible'));
+    document.getElementById('activity-chevron').classList.toggle('activity-chevron-right');
   }
 
-  s_widget_custom.showMoreContent = (event, index) => {
-    event.target.closest('.activity-item').hidden = true;
-    const showMoreContentIndex = Math.ceil(index / 100) - 1;
-    updateActivityFeedItems(index, `activity-feed-show-more-content-${showMoreContentIndex}`);
+
+  s_widget_custom.commentChanges = () => {
+    const isCommentFilled = !!s_widget.getFieldValue('comment').trim();
+
+    s_widget.setFieldValue('isAddCommentButtonDisabled', !isCommentFilled);
   }
 
   s_widget_custom.addComment = async () => {
-    s_widget.setFieldValue('add_comment_disabled', true);
-    const comment = s_widget.getFieldValue('comment');
-    if (comment === undefined || comment === null || !comment.toString()) {
-      s_widget.setFieldValue('add_comment_disabled', false);
-      return;
-    }
     document.getElementById('activity-feed').insertAdjacentHTML('afterbegin', LOADER);
-    s_widget.setFieldValue('action', 'ADD_COMMENT');
     s_widget.setFieldValue('activity_records_count', activityObject.activity_records.length.toString());
     s_widget.setFieldValue('activity_object', JSON.stringify(activityObject));
-    await s_widget.serverUpdate();
-    activityObject = JSON.parse(s_widget.getFieldValue('activity_object'));
+    await updateServer('ADD_COMMENT');
+    s_widget.setFieldValue('isAddCommentButtonDisabled', true);
+    setGlabalVariables();
     filterActivities();
     updateActivityFeedItems();
-    s_widget.setFieldValue('add_comment_disabled', false);
     document.querySelector('.loader').remove();
   }
 
-  s_widget_custom.filter = async (activityType) => {
+  s_widget_custom.filter = (activityType) => {
     const currentTab = document.getElementById(`tab-${activityType}`);
     if (currentTab.classList.contains('tab-active')) {
       return;
@@ -222,27 +208,53 @@ function updateActivityFeedItems(index = 0, showMoreContent = false) {
   }
 }
 
+function composeActivityGroupTemplate(activityDateTime) {
+  let date;
+  if (!activityDateTime.match(/\d{4}-\d{2}-\d{2}/)) {
+    date = activityDateTime.split(' ')[0];
+  } else {
+    date = new Date(activityDateTime).toISOString().split('T')[0];
+  }
+  if (activityGroups.indexOf(date) !== -1) {
+    return '';
+  }
+  activityGroups.push(date);
+  return `
+    <div id="${date}" class="activity-group">
+      <span>${date}</span>
+    </div>
+  `.trim();
+}
+
 function composeActivityItemHeadTemplate(data) {
   const type = data.activity_type;
 
   return `
-        <div class="activity-item-head">
-            <div class="activity-item-user">
-                ${getAvatar(data.avatar)}
-                <div class="activity-content">
-                    <div class="user-title">${data.sys_created_by_display}</div>
-                    <div class="activity-date">${data.sys_created_at_display}</div>${data.target_item_link ? `&nbsp${data.target_item_link}` : ''}
-                </div>
-            </div>
-            <div class="activity-content-icon"
-                <button buttonType="icon" hint="${getHint(type)}" event-click="s_widget_custom.filter('${type}')">${getEmoji(type)}</button>
-            </div>
+    <div class="activity-item-head">
+      <div class="activity-item-user">
+        <div>${getAvatarTemplate(data)}</div>
+        <div class="activity-content">
+          <div class="user-title">${data.sys_created_by_display}</div>
+          <div class="activity-date">${data.sys_created_at_display}</div>${data.target_item_link ? `&nbsp${data.target_item_link}` : ''}
         </div>
-    `.trim();
+      </div>
+      <div class="activity-content-icon"
+        <button buttonType="icon" hint="${getHint(type)}" event-click="s_widget_custom.filter('${type}')">${getEmoji(type)}</button>
+      </div>
+    </div>
+  `.trim();
 }
 
-function getAvatar(avatar) {
-  return avatar ? `<img alt="" class="activity-avatar" src="${avatar}">` : AVATAR_SVG;
+function getAvatarTemplate(data) {
+  if (data.avatar) {
+    return `<img alt="" class="activity-avatar" src="${data.avatar}">`;
+  }
+
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 40 40">
+	    <path fill="#E1E1E1" d="M20 0C8.96 0 0 8.96 0 20s8.96 20 20 20 20-8.96 20-20S31.04 0 20 0zm0 6c3.32 0 6 2.68 6 6s-2.68 6-6 6-6-2.68-6-6 2.68-6 6-6zm0 28.4c-5 0-9.42-2.56-12-6.44.06-3.98 8-6.16 12-6.16 3.98 0 11.94 2.18 12 6.16-2.58 3.88-7 6.44-12 6.44z"></path>
+    </svg>
+  `;
 }
 
 function getHint(type) {
@@ -263,19 +275,23 @@ function getHint(type) {
 
 function getEmoji(type) {
   if (type === 'history') {
-    return HISTORY_BOOK_EMJ;
+    return '<span class="emoji">📖</span>';
   }
 
   if (type === 'deadline') {
-    return DEADLINE_ICON_EMJ;
+    return '<span class="emoji">📆</span>';
   }
 
   if (type === 'additional-comments') {
-    return ADDITIONAL_COMMENTS_EMJ;
+    return '<span class="emoji">💬</span>';
   }
 
   if (type === 'work-notes') {
-    return WORK_NOTES_EMJ;
+    return '<span class="emoji">📝</span>';
+  }
+
+  if (type === 'email') {
+    return '<span class="emoji">📫</span>';
   }
 
   return '';
@@ -283,12 +299,12 @@ function getEmoji(type) {
 
 function composeDeadlineTemplate(data) {
   return `
-        ${composeActivityGroupTemplate(data.sys_created_at_display)}
-        <div class="activity-item">
-            ${composeActivityItemHeadTemplate(data)}
-            ${composeHistoryItemListTemplate(data.content)}
-        </div>
-    `.trim();
+    ${composeActivityGroupTemplate(data.sys_created_at_display)}
+    <div class="activity-item">
+      ${composeActivityItemHeadTemplate(data)}
+      ${composeHistoryItemListTemplate(data.content)}
+    </div>
+  `.trim();
 }
 
 function composeHistoryTemplate(data) {
@@ -329,8 +345,8 @@ function composeHistoryItemTemplate(item) {
 
 function composeEmailConversationTemplate(emailData) {
   const emailId = emailData.sys_id;
-  const creationDateTime = emailData.email_creation_date_time;
-  const sanitizeEmailSubject = sanitizeValue(emailData.subject);
+  const creationDateTime = emailData.sys_created_at_display;
+  const sanitizeEmailSubject = emailData.subject;
   return `
 	${composeActivityGroupTemplate(creationDateTime)}
 	<div class="email-item">
@@ -357,19 +373,6 @@ function composeEmailConversationTemplate(emailData) {
 	</div>`.trim();
 }
 
-function sanitizeValue(text) {
-  const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;',
-  };
-  return text.replace(/[&<>"']/g, function (m) {
-    return map[m];
-  });
-}
-
 function composeCommentsTemplate(data) {
   return `
         ${composeActivityGroupTemplate(data.sys_created_at_display)}
@@ -385,28 +388,11 @@ function composeCommentsTemplate(data) {
 function composeShowMoreTemplate(index) {
   return `
         <div class="activity-item show-more" data-type="show-more">
-            <div class="show-more-content" event-click="s_widget_custom.showMoreContent(event, ${index});">
+            <div class="show-more-content" event-click="s_widget_custom.showMoreContent(event, ${index})">
                 <span>Показать больше</span>
             </div>
         </div>
     `.trim();
-}
-
-function composeActivityGroupTemplate(activityDateTime) {
-  let date;
-  if (!activityDateTime.match(/\d{4}-\d{2}-\d{2}/)) {
-    date = activityDateTime.split(' ')[0];
-  } else {
-    date = new Date(activityDateTime).toISOString().split('T')[0];
-  }
-  if (activityGroups.indexOf(date) !== -1) {
-    return '';
-  }
-  activityGroups.push(date);
-  return `
-	<div id="${date}" class="activity-group">
-		<span>${date}</span>
-	</div>`.trim();
 }
 
 function countEmailAttachments(amount) {
@@ -423,7 +409,5 @@ async function openImageModal(event) {
     maxWidth: '950px',
     zIndex: '30',
   });
-  document
-    .getElementById('comment-body')
-    .insertAdjacentHTML('afterbegin', `<img src ="${event.target.src}" alt="no"></img>`);
+  document.getElementById('comment-body').insertAdjacentHTML('afterbegin', `<img src ="${event.target.src}" alt="no"></img>`);
 }
