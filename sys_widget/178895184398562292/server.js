@@ -476,7 +476,7 @@ function getAvailableColumnIds() {
 }
 
 function getPropertyPrefix() {
-  if (input.table_name === 'c_rar') {
+  if (input.table_name === 'c_zapad_task') {
     return 'zapad';
   }
 
@@ -488,7 +488,7 @@ function getPropertyPrefix() {
 }
 
 function addDeadlineData() {
-  if (input.table_name === 'c_rar') {
+  if (input.table_name === 'c_zapad_task') {
     return;
   }
 
