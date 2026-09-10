@@ -46,7 +46,6 @@ let emailConversation = 'email_conversation';
   }
 
   if (input.action === 'INIT') {
-    data.isManager = ss.hasRole('ITSM_agent') || ss.hasRole('service_manager');
     setTranslations();
     setJournalInputColumns();
     setCommentTypeOptions(record);
@@ -58,7 +57,7 @@ let emailConversation = 'email_conversation';
     data.action = '';
     data.comment = '';
 
-    const commentType = input.commentTypeOption.database_value;
+    const { database_value: commentType } = input.commentTypeOption;
 
     if (commentType === 'work-notes') {
       record[workNotes] = input.comment;
@@ -108,7 +107,7 @@ function setCommentTypeOptions(record) {
   const attributes = record.getAttributes();
   const options = [];
 
-  if (attributes.hasOwnProperty(workNotes) && data.isManager) {
+  if (attributes.hasOwnProperty(workNotes) && (ss.hasRole('ITSM_agent') || ss.hasRole('service_manager'))) {
     const option = {
       database_value: 'work-notes',
       display_value: data.translations.work_notes
@@ -117,7 +116,7 @@ function setCommentTypeOptions(record) {
     options.push(option);
 
     data.commentTypeOption = data.commentTypeOption || option;
-    data.isWorkNotesTabVisible = true;
+    data.isWorkNotesAvailable = true;
   }
 
   if (attributes.hasOwnProperty(additionalComments)) {
@@ -129,12 +128,10 @@ function setCommentTypeOptions(record) {
     options.push(option);
 
     data.commentTypeOption = data.commentTypeOption || option;
-    data.isAdditionalCommentsTabVisible = true;
+    data.isAdditionalCommentsAvailable = true;
   }
 
   data.commentTypeOptions = options;
-  data.isCommentBlockVisible = options.length !== 0;
-  data.isCommentHintVisible = attributes.hasOwnProperty(additionalComments) && input.table_name !== 'c_rar';
 }
 
 function filterActivityTargetRecords(task, tableName, recordId) {
@@ -217,6 +214,9 @@ function getActivitiesData() {
   const regexWorkNotess = new RegExp('^' + workNotes + '\\.');
   const regexEmailConversation = new RegExp('^' + emailConversation + '\\.');
 
+  const isWorkNotesAvailable = data.isWorkNotesAvailable || input.isWorkNotesAvailable;
+  const isAdditionalCommentsAvailable = data.isAdditionalCommentsAvailable || input.isAdditionalCommentsAvailable;
+
   while (activity.next()) {
     lastFoundActivityRecordId = activity.sys_id.toString();
     const activityTypeName = activity.type_id.name;
@@ -233,12 +233,17 @@ function getActivitiesData() {
         continue;
       }
       addActivityRecord(activity, 'history', filteredHistoryFields, activityTargetItemLink);
-    } else if (activityTypeName.match(regexWorkNotess) && data.isManager) {
-      addActivityRecord(activity, 'work-notes', JSON.parse(activityContent).message.display_value, activityTargetItemLink);
-    } else if (activityTypeName.match(regexAdditionalComments)) {
-      addActivityRecord(activity, 'additional-comments', escapeSpecialSymbols(JSON.parse(activityContent).message.display_value), activityTargetItemLink);
+    } else if (activityTypeName.match(regexWorkNotess) && isWorkNotesAvailable) {
+      activityContent = JSON.parse(activityContent);
+      const content = activityContent.message.display_value || activityContent.message;
+      addActivityRecord(activity, 'work-notes', content, activityTargetItemLink);
+    } else if (activityTypeName.match(regexAdditionalComments) && isAdditionalCommentsAvailable) {
+      activityContent = JSON.parse(activityContent);
+      const content = activityContent.message.display_value || activityContent.message;
+      addActivityRecord(activity, 'additional-comments', escapeSpecialSymbols(content), activityTargetItemLink);
     }
   }
+
   addDeadlineData();
   getEmailConversationData();
 
@@ -473,6 +478,18 @@ function getAvailableColumnIds() {
     .filter((id) => id);
 }
 
+function getPropertyPrefix() {
+  if (input.table_name === 'c_rar') {
+    return 'zapad';
+  }
+
+  if (input.table_name === 'c_presale_task' || input.table_name === 'c_presale_order') {
+    return 'presale';
+  }
+
+  return 'dvt';
+}
+
 function addDeadlineData() {
   if (input.table_name === 'c_rar') {
     return;
@@ -494,19 +511,7 @@ function addDeadlineData() {
     addActivityRecord(history, 'deadline', content, '');
   }
 
-  data.isDeadlineTabVisible = true;
-}
-
-function getPropertyPrefix() {
-  if (input.table_name === 'c_rar') {
-    return 'zapad';
-  }
-
-  if (input.table_name === 'c_presale_task' || input.table_name === 'c_presale_order') {
-    return 'presale';
-  }
-
-  return 'dvt';
+  data.isDeadlineAvailable = true;
 }
 
 function addActivityRecord(record, type, content, activityTargetItemLink) {

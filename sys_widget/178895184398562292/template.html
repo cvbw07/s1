@@ -1,4 +1,4 @@
-<div id="activity-box" class="activity-main" simple-if="{data.isActivityVisible}">
+<div id="activity-box" class="activity-main">
   <div class="activity-header" event-click="s_widget_custom.toggleActivity()">
     <div class="activity-header-title">{data.translations.activity_feed_title} ({data.activity_records_count})</div>
     <div id="activity-chevron" class="activity-chevron">
@@ -62,8 +62,8 @@
     <div class="separator"></div>
     <div class="activity-tabs">
       <div id="tab-email" class="activity-tab" event-click="s_widget_custom.filter('email')">📫 {data.translations.email_conversation}</div>
-      <div id="tab-additional-comments" class="activity-tab" event-click="s_widget_custom.filter('additional-comments')" simple-if="{data.isAdditionalCommentsTabVisible}">💬 {data.translations.additional_comments}</div>
       <div id="tab-work-notes" class="activity-tab" event-click="s_widget_custom.filter('work-notes')" simple-if="{data.isWorkNotesTabVisible}">📝 {data.translations.work_notes}</div>
+      <div id="tab-additional-comments" class="activity-tab" event-click="s_widget_custom.filter('additional-comments')" simple-if="{data.isAdditionalCommentsTabVisible}">💬 {data.translations.additional_comments}</div>
       <div id="tab-history" class="activity-tab" event-click="s_widget_custom.filter('history')">📖 {data.translations.changes_history}</div>
       <div id="tab-deadline" class="activity-tab" event-click="s_widget_custom.filter('deadline')" simple-if="{data.isDeadlineTabVisible}">📆 {data.translations.deadline}</div>
       <div id="tab-all" class="activity-tab tab-active" event-click="s_widget_custom.filter('all')">📦 {data.translations.all_activity_feed_items}</div>

@@ -31,13 +31,14 @@ let activityGroups = [];
 let activityRecordsCount = 0;
 let activityObject;
 let currentActivityRecordList;
-let translations;
 
 (async () => {
+  await init();
+
   s_widget_custom.downloadAttach = async (attachId) => {
     const attachmentURL = `/attachments/download/${attachId}?access-token=${s_user.accessToken}`;
     window.location = `${API_BASE_URL}${attachmentURL}`;
-  };
+  }
 
   s_widget_custom.showEmailBodyModal = async (emailBodyId) => {
     const emailsObject = activityObject.emails_object;
@@ -56,11 +57,11 @@ let translations;
     });
     s_widget.addTemplate('email-attachments', template, '', 'inner');
     document.getElementById('email-body').insertAdjacentHTML('afterbegin', emailsObject[emailBodyId].email_body);
-  };
+  }
 
   s_widget_custom.openEmailLink = function (emailBodyId) {
     s_go.open(`/record/sys_email/${emailBodyId}`, '_blank', () => { });
-  };
+  }
 
   s_widget_custom.destroyModal = () => {
     s_widget.setFieldValue('show_modal', false);
@@ -68,7 +69,7 @@ let translations;
     s_widget.setFieldValue('show_comment_modal', false);
     s_widget.setFieldValue('show_comment_img_modal', false);
     s_widget.removeTemplate('email-attachments');
-  };
+  }
 
   s_widget_custom.toggleActivity = async function () {
     const chevron = document.getElementById('activity-chevron');
@@ -79,17 +80,13 @@ let translations;
       chevron.classList.add('activity-chevron-right');
       s_widget.setFieldValue('isActivityContentVisible', false);
     }
-  };
+  }
 
   s_widget_custom.showMoreContent = (event, index) => {
     event.target.closest('.activity-item').hidden = true;
     const showMoreContentIndex = Math.ceil(index / 100) - 1;
-    updateActivityFeedItems(
-      currentActivityRecordList,
-      index,
-      `activity-feed-show-more-content-${showMoreContentIndex}`,
-    );
-  };
+    updateActivityFeedItems(index, `activity-feed-show-more-content-${showMoreContentIndex}`);
+  }
 
   s_widget_custom.addComment = async () => {
     s_widget.setFieldValue('add_comment_disabled', true);
@@ -105,10 +102,10 @@ let translations;
     await s_widget.serverUpdate();
     activityObject = JSON.parse(s_widget.getFieldValue('activity_object'));
     filterActivities();
-    updateActivityFeedItems(currentActivityRecordList);
+    updateActivityFeedItems();
     s_widget.setFieldValue('add_comment_disabled', false);
     document.querySelector('.loader').remove();
-  };
+  }
 
   s_widget_custom.filter = async (activityType) => {
     const currentTab = document.getElementById(`tab-${activityType}`);
@@ -120,43 +117,77 @@ let translations;
     });
     currentTab.classList.add('tab-active');
     if (activityType === 'work-notes' || activityType === 'additional-comments') {
-      s_widget.setFieldValue('commentTypeOption', {
-        database_value: activityType,
-        display_value: activityType === 'work-notes' ? translations.work_notes : translations.additional_comments,
-      });
+      s_widget.setFieldValue('commentTypeOption', s_widget.getFieldValue('commentTypeOptions').find(({ database_value }) => database_value === activityType));
     }
     filterActivities(activityType);
-    updateActivityFeedItems(currentActivityRecordList);
+    updateActivityFeedItems();
     document.getElementById('activity-feed').scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }
+})();
 
-  const tableName = s_form.getTableName();
-  if (tableName === 'itsm_infosys_task') {
+async function init() {
+  const startTime = Date.now();
+
+  toggleLoaderVisibility();
+
+  if (s_form.getTableName() === 'itsm_infosys_task') {
     document.getElementById('activity-box').classList.add('m-w-100-important');
   }
 
   s_widget.setFieldValue('table_name', s_form.getTableName());
   s_widget.setFieldValue('record_id', s_form.getUniqueValue());
-  const start = Date.now();
-  s_widget.setFieldValue('isLoaderVisible', true);
-  s_widget.setFieldValue('action', 'INIT');
-  await s_widget.serverUpdate();
-  s_widget.setFieldValue('isActivityVisible', true);
+
+  await updateServer('INIT');
+
+  s_widget.setFieldValue('isCommentHintVisible', s_widget.getFieldValue('isAdditionalCommentsAvailable') && s_form.getTableName() !== 'c_rar');
+  s_widget.setFieldValue('isCommentBlockVisible', s_widget.getFieldValue('commentTypeOptions').length !== 0);
+  s_widget.setFieldValue('isWorkNotesTabVisible', s_widget.getFieldValue('isWorkNotesAvailable'));
+  s_widget.setFieldValue('isAdditionalCommentsTabVisible', s_widget.getFieldValue('isAdditionalCommentsAvailable'));
+  s_widget.setFieldValue('isDeadlineTabVisible', s_widget.getFieldValue('isDeadlineAvailable'));
   s_widget.setFieldValue('isActivityContentVisible', true);
-  s_widget.setFieldValue('isLoaderVisible', false);
-  translations = s_widget.getFieldValue('translations');
+
+  setGlabalVariables();
+  filterActivities();
+  updateActivityFeedItems();
+
+  toggleLoaderVisibility();
+
+  console.log(`Activity execution time: ${Date.now() - startTime} ms`);
+}
+
+async function updateServer(action) {
+  s_widget.setFieldValue('action', action);
+  await s_widget.serverUpdate();
+  s_widget.setFieldValue('action', '');
+}
+
+function toggleLoaderVisibility() {
+  s_widget.setFieldValue('isLoaderVisible', !s_widget.getFieldValue('isLoaderVisible'));
+}
+
+function setGlabalVariables() {
   activityObject = JSON.parse(s_widget.getFieldValue('activity_object'));
   currentActivityRecordList = activityObject.activity_records;
-  filterActivities();
-  updateActivityFeedItems(currentActivityRecordList);
-  const end = Date.now();
-  console.log(`Activity execution time: ${end - start} ms`);
-})();
+}
 
-function updateActivityFeedItems(activityRecords, index = 0, showMoreContent = false) {
-  activityRecordsCount = activityRecords.length;
+function filterActivities(activityType = null) {
+  if (!activityType) {
+    activityType = document.querySelector('.activity-tab.tab-active').id.replace(/^tab-/, '');
+  }
+  currentActivityRecordList = activityObject.activity_records;
+  if (activityType !== 'all') {
+    currentActivityRecordList = currentActivityRecordList.filter((record) => record.activity_type === activityType);
+  } else {
+    currentActivityRecordList = currentActivityRecordList.filter((record) => record.activity_type !== 'deadline');
+  }
+  s_widget.setFieldValue('activity_records_count', currentActivityRecordList.length.toString());
+  activityGroups = [];
+}
+
+function updateActivityFeedItems(index = 0, showMoreContent = false) {
+  activityRecordsCount = currentActivityRecordList.length;
   let template = '';
-  for (const record of activityRecords.slice(index, index + 100)) {
+  for (const record of currentActivityRecordList.slice(index, index + 100)) {
     if (record.activity_type === 'deadline') {
       template += composeDeadlineTemplate(record);
     } else if (record.activity_type === 'history') {
@@ -215,16 +246,16 @@ function getAvatar(avatar) {
 }
 
 function getHint(type) {
-  if (type === 'deadline' || type === 'history') {
-    return translations.show_changes_history;
+  if (type === 'history' || type === 'deadline') {
+    return '{data.translations.show_changes_history}';
   }
 
   if (type === 'additional-comments') {
-    return translations.show_additional_info;
+    return '{data.translations.show_additional_info}';
   }
 
   if (type === 'work-notes') {
-    return translations.show_work_notes;
+    return '{data.translations.show_work_notes}';
   }
 
   return '';
@@ -311,7 +342,7 @@ function composeEmailConversationTemplate(emailData) {
 			<div class="email-item-semi-header">
 				<div><span class="user-title">От:</span> ${emailData.from}</div>
 				<div class="activity-content-icon-email">
-					<button buttonType="icon" hint="${translations.show_email_conversation}" event-click="s_widget_custom.filter('email')">${EMAIL_ICON_EMJ}</button>
+					<button buttonType="icon" hint="{data.translations.show_email_conversation}" event-click="s_widget_custom.filter('email')">${EMAIL_ICON_EMJ}</button>
 				</div>
 			</div>
 			<div><span class="user-title">Кому:</span> ${emailData.to}</div>
@@ -376,20 +407,6 @@ function composeActivityGroupTemplate(activityDateTime) {
 	<div id="${date}" class="activity-group">
 		<span>${date}</span>
 	</div>`.trim();
-}
-
-function filterActivities(activityType = null) {
-  if (!activityType) {
-    activityType = document.querySelector('.activity-tab.tab-active').id.replace(/^tab-/, '');
-  }
-  currentActivityRecordList = activityObject.activity_records;
-  if (activityType !== 'all') {
-    currentActivityRecordList = currentActivityRecordList.filter((record) => record.activity_type === activityType);
-  } else {
-    currentActivityRecordList = currentActivityRecordList.filter((record) => record.activity_type !== 'deadline');
-  }
-  s_widget.setFieldValue('activity_records_count', currentActivityRecordList.length.toString());
-  activityGroups = [];
 }
 
 function countEmailAttachments(amount) {
