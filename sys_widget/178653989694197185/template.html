@@ -38,12 +38,12 @@
       </button>
     </div>
   </div>
-  <div class="comment-block">
+  <div class="comment-block" simple-if="{data.isCommentBlockVisible}">
     <div class="comment-block-flex">
-      <div class="comment-block-flex-first-row" simple-if="{data.isCommentBlockVisible}">
-        <select radioButtonsMode="true" class="select-work-note-or-comment" model="data.select_work_note_or_comment" options="{data.select_work_note_or_comment_options}"></select>
+      <div class="comment-block-flex-first-row">
+        <select radioButtonsMode="true" class="select-work-note-or-comment" model="data.commentTypeOption" options="{data.commentTypeOptions}"></select>
         <span class="comment-block-flex-first-row-btn">
-          <button
+          <button simple-if="{data.isCommentHintVisible}"
             class="src-components-button-___styles-module__IconMini___DVKTd src-components-dynamicForms-view-fieldWrapper-___styles-module__BtnIcon___rzdZS"
             type="button"
             tabindex="20"
@@ -76,7 +76,7 @@
       <textarea id="user-comment" model="data.comment" placeholder="{data.translations.enter_your_message}" event-change="s_widget_custom.commentChanges()"></textarea>
     </div>
     <div class="comment-button">
-      <button id="add-comment" class="active-button" disabled="{data.isSendCommentButtonDisabled}" event-click="s_widget_custom.sendComment()">
+      <button id="add-comment" class="active-button" disabled="{data.isAddCommentButtonDisabled}" event-click="s_widget_custom.addComment()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
             fill="#fff"
@@ -86,15 +86,15 @@
     </div>
   </div>
 
-  <div id="activity-content" simple-if="{data.isActivityContentVisible}">
+  <div id="activity-content" simple-show="{data.isActivityContentVisible}">
     <div class="separator"></div>
     <div class="activity-tabs-block">
       <div class="activity-tabs">
         <div id="tab-email" class="activity-tab" event-click="s_widget_custom.filter('email')">📫 {data.translations.email_conversation}</div>
-        <div id="tab-additional-comments" class="activity-tab" event-click="s_widget_custom.filter('additional-comments')">💬 {data.translations.additional_comments_tab_title}</div>
-        <div simple-if="{data.can_read_work_notes}" id="tab-work-notes" class="activity-tab" event-click="s_widget_custom.filter('work-notes')">📝 {data.translations.work_notes}</div>
+        <div id="tab-work-notes" class="activity-tab" event-click="s_widget_custom.filter('work-notes')" simple-if="{data.isWorkNotesTabVisible}">📝 {data.translations.work_notes}</div>
+        <div id="tab-additional-comments" class="activity-tab" event-click="s_widget_custom.filter('additional-comments')" simple-if="{data.isAdditionalCommentsTabVisible}">💬 {data.translations.additional_comments}</div>
         <div id="tab-history" class="activity-tab" event-click="s_widget_custom.filter('history')">📖 {data.translations.changes_history}</div>
-        <div id="tab-deadline" class="activity-tab" event-click="s_widget_custom.filter('deadline')">📆 {data.translations.deadline}</div>
+        <div id="tab-deadline" class="activity-tab" event-click="s_widget_custom.filter('deadline')" simple-if="{data.isDeadlineTabVisible}">📆 {data.translations.deadline}</div>
         <div id="tab-all" class="activity-tab tab-active" event-click="s_widget_custom.filter('all')">📦 {data.translations.all_activity_feed_items}</div>
       </div>
       <div class="activity-settings">
@@ -130,14 +130,14 @@
     <div id="activity-feed" class="activity-feed"></div>
   </div>
 </div>
-<modal id="email-modal" simple-if="{data.show_email_modal}" isShow="{data.show_modal}" title="{data.current_email_modal_title}" doClose="window.s_widget_custom.destroyModal()">
+<modal id="email-modal" simple-if="{data.show_email_modal}" isShow="{data.show_modal}" title="{data.current_email_modal_title}" doClose="s_widget_custom.destroyModal()">
   <div class="email-modal">
     <div class="email-attach-title">Вложения:</div>
     <div id="email-attachments"></div>
     <div id="email-body" class="email-body-wrapper"></div>
   </div>
 </modal>
-<modal id="comment-modal" simple-if="{data.show_comment_modal}" isShow="{data.show_comment_img_modal}" doClose="window.s_widget_custom.destroyModal()">
+<modal id="comment-modal" simple-if="{data.show_comment_modal}" isShow="{data.show_comment_img_modal}" doClose="s_widget_custom.destroyModal()">
   <div class="comment-modal">
     <div id="comment-body" class="comment-body"></div>
   </div>

@@ -25,8 +25,6 @@ let activityRecordList;
 let currentActivityRecordList;
 
 (async () => {
-  window.s_widget_custom = window.s_widget_custom || {};
-
   await init();
 
   s_widget_custom.downloadAttach = (attachId) => {
@@ -134,7 +132,7 @@ let currentActivityRecordList;
     const isDurationFilled = !!s_widget.getFieldValue('duration') && s_widget.getFieldValue('duration') !== '0';
     const isButtonDisabled = !isCommentFilled || !isDurationFilled;
 
-    s_widget.setFieldValue('isSendCommentButtonDisabled', isButtonDisabled);
+    s_widget.setFieldValue('isAddCommentButtonDisabled', isButtonDisabled);
   }
 
   s_widget_custom.commentChanges = () => {
@@ -143,16 +141,16 @@ let currentActivityRecordList;
     const isButtonDisabled = !isCommentFilled || !isDurationFilled;
 
     s_widget.setFieldValue('isDurationMandatory', isCommentFilled);
-    s_widget.setFieldValue('isSendCommentButtonDisabled', isButtonDisabled);
+    s_widget.setFieldValue('isAddCommentButtonDisabled', isButtonDisabled);
   }
 
-  s_widget_custom.sendComment = async () => {
+  s_widget_custom.addComment = async () => {
     document.getElementById('activity-feed').insertAdjacentHTML('afterbegin', LOADER);
     s_widget.setFieldValue('activity_records_count', activityObject.activity_records.length.toString());
     s_widget.setFieldValue('activity_object', JSON.stringify(activityObject));
     await updateServer('ADD_COMMENT');
     s_widget.setFieldValue('isDurationMandatory', false);
-    s_widget.setFieldValue('isSendCommentButtonDisabled', true);
+    s_widget.setFieldValue('isAddCommentButtonDisabled', true);
     setGlabalVariables();
     filterActivities();
     updateActivityFeedItems();
@@ -178,10 +176,7 @@ let currentActivityRecordList;
     }
 
     if (activityType === 'work-notes' || activityType === 'additional-comments') {
-      s_widget.setFieldValue('select_work_note_or_comment', {
-        database_value: activityType,
-        display_value: activityType === 'work-notes' ? 'Рабочие записи' : 'Дополнительные комментарии'
-      });
+      s_widget.setFieldValue('commentTypeOption', s_widget.getFieldValue('commentTypeOptions').find(({ database_value }) => database_value === activityType));
     }
     filterActivities();
     updateActivityFeedItems();
@@ -197,7 +192,7 @@ async function init() {
   initToggleOldValueVisibilityButton();
   initToggleLogModeButton();
   initToggleOrderButton();
-  initSendCommentButton();
+  initAddCommentButton();
 
   if (s_form.getTableName() === 'itsm_infosys_task') {
     document.getElementById('activity-box').classList.add('m-w-100-important');
@@ -208,7 +203,11 @@ async function init() {
 
   await updateServer('INIT');
 
-  s_widget.setFieldValue('isCommentBlockVisible', true);
+  s_widget.setFieldValue('isCommentHintVisible', s_widget.getFieldValue('isAdditionalCommentsAvailable'));
+  s_widget.setFieldValue('isCommentBlockVisible', s_widget.getFieldValue('commentTypeOptions').length !== 0);
+  s_widget.setFieldValue('isWorkNotesTabVisible', s_widget.getFieldValue('isWorkNotesAvailable'));
+  s_widget.setFieldValue('isAdditionalCommentsTabVisible', s_widget.getFieldValue('isAdditionalCommentsAvailable'));
+  s_widget.setFieldValue('isDeadlineTabVisible', s_widget.getFieldValue('isDeadlineAvailable'));
   s_widget.setFieldValue('isActivityContentVisible', true);
 
   setGlabalVariables();
@@ -270,8 +269,8 @@ function initToggleOrderButton() {
   s_widget.setFieldValue('isOrderNotReversed', !isOrderReversed);
 }
 
-function initSendCommentButton() {
-  s_widget.setFieldValue('isSendCommentButtonDisabled', true);
+function initAddCommentButton() {
+  s_widget.setFieldValue('isAddCommentButtonDisabled', true);
 }
 
 function setGlabalVariables() {

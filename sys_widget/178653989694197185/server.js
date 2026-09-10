@@ -27,59 +27,50 @@ const selectedAttributes = {
   employee: ['sys_id', 'frist_name', 'last_name', 'username'],
   choice: ['sys_id', 'title'],
 };
+
 let workNotes = 'work_notes';
 let additionalComments = 'additional_comments';
 let emailConversation = 'email_conversation';
 
-const user = new SimpleUser();
-const userLanguage = user.getContext().language_id.language;
 (() => {
-  const recordId = input.record_id;
   const tableName = input.table_name;
-  if (!recordId || !tableName) {
+  const recordId = input.record_id;
+  if (!tableName || !recordId) {
     return;
   }
 
-  if (tableName == 'c_presale_task' || tableName == 'c_presale_order') {
-    workNotes = 'z_work_notes';
-    additionalComments = 'z_additional_comments';
-    emailConversation = 'z_email_conversation';
-  }
-
-  if (tableName == 'itsm_infosys_order') {
-    emailConversation = 'c_email_conversation';
-  }
-
-  const task = new SimpleRecord(tableName);
-  task.get(recordId);
-  if (!task.sys_id) {
+  const record = new SimpleRecord(tableName);
+  record.get(recordId);
+  if (!record.sys_id) {
     return;
   }
 
   if (input.action === 'INIT') {
     setTranslations();
-    filterActivityTargetRecords(task, tableName, recordId);
+    setJournalInputColumns();
+    setCommentTypeOptions(record);
+    filterActivityTargetRecords(record, tableName, recordId);
     getActivitiesData();
   }
 
   if (input.action === 'ADD_COMMENT') {
-    const commentType = input.select_work_note_or_comment.database_value;
+    data.comment = '';
+    data.duration = '';
+
+    const { database_value: commentType } = input.commentTypeOption;
     const comment = getComment(input.comment, input.duration, task.getDisplayValue('c_trz_type'));
 
     if (commentType === 'work-notes') {
-      task[workNotes] = comment;
+      record[workNotes] = comment;
     }
 
     if (commentType === 'additional-comments') {
-      task[additionalComments] = comment;
+      record[additionalComments] = comment;
     }
 
-    task.update();
+    record.update();
 
     setTimeSpent();
-
-    data.comment = '';
-    data.duration = '';
 
     getActivitiesData();
   }
@@ -89,8 +80,7 @@ function setTranslations() {
   const message = new SimpleMessage();
   data.translations = {
     activity_feed_title: message.getMessage('Activity Feed', 'app'),
-    additional_comments: message.getMessage('Additional comments', 'activity_feed'),
-    additional_comments_tab_title: message.getMessage('Additional info', 'activity_feed'),
+    additional_comments: message.getMessage('Additional info', 'activity_feed'),
     all_activity_feed_items: message.getMessage('All activity feed items', 'activity_feed'),
     changes_history: message.getMessage('Changes history', 'activity_feed'),
     deadline: message.getMessage('Deadline', 'activity_feed'),
@@ -102,6 +92,49 @@ function setTranslations() {
     show_work_notes: message.getMessage('Show work notes', 'activity_feed'),
     work_notes: message.getMessage('Work notes', 'activity_feed'),
   };
+}
+
+function setJournalInputColumns() {
+  if (input.table_name == 'c_presale_task' || input.table_name == 'c_presale_order') {
+    workNotes = 'z_work_notes';
+    additionalComments = 'z_additional_comments';
+    emailConversation = 'z_email_conversation';
+  }
+
+  if (input.table_name == 'itsm_infosys_order') {
+    emailConversation = 'c_email_conversation';
+  }
+}
+
+function setCommentTypeOptions(record) {
+  const attributes = record.getAttributes();
+  const options = [];
+
+  if (attributes.hasOwnProperty(workNotes) && (ss.hasRole('ITSM_agent') || ss.hasRole('service_manager'))) {
+    const option = {
+      database_value: 'work-notes',
+      display_value: data.translations.work_notes,
+    };
+
+    options.push(option);
+
+    data.commentTypeOption = data.commentTypeOption || option;
+    data.isWorkNotesAvailable = true;
+  }
+
+  if (attributes.hasOwnProperty(additionalComments)) {
+    const option = {
+      database_value: 'additional-comments',
+      display_value: data.translations.additional_comments,
+    };
+
+    options.push(option);
+
+    data.commentTypeOption = data.commentTypeOption || option;
+    data.isAdditionalCommentsAvailable = true;
+  }
+
+  data.commentTypeOptions = options;
 }
 
 function getComment(comment, duration, type) {
@@ -180,43 +213,23 @@ function getActivitiesData() {
   activity.query();
   if (activity.getRowCount() === 0) {
     activityRecordList = existingRecords;
-    data.activity_object = JSON.stringify(activityObject);
     data.activity_records_count = activityRecordList.length.toString();
+    data.activity_object = JSON.stringify({
+      last_found_activity_record_id: lastFoundActivityRecordId,
+      activity_records: activityRecordList,
+      emails_object: emailsObject,
+      filter_type_list: filterTypeList,
+      activity_target_item_object: activityTargetItemObject,
+    });
     return;
-  }
-
-  data.can_read_work_notes = user.hasRole('ITSM_agent') ? user.hasRole('ITSM_agent') : user.hasRole('service_manager');
-  if (!input.select_work_note_or_comment && data.can_read_work_notes) {
-    data.select_work_note_or_comment = {
-      database_value: 'work-notes',
-      display_value: data.translations.work_notes,
-    };
-    data.select_work_note_or_comment_options = [
-      {
-        database_value: 'work-notes',
-        display_value: data.translations.work_notes,
-      },
-      {
-        database_value: 'additional-comments',
-        display_value: data.translations.additional_comments,
-      },
-    ];
-  } else if (!input.select_work_note_or_comment && !data.can_read_work_notes) {
-    data.select_work_note_or_comment = {
-      database_value: 'additional-comments',
-      display_value: data.translations.additional_comments,
-    };
-    data.select_work_note_or_comment_options = [
-      {
-        database_value: 'additional-comments',
-        display_value: data.translations.additional_comments,
-      },
-    ];
   }
 
   const regexAdditionalComments = new RegExp('^' + additionalComments + '\\.');
   const regexWorkNotess = new RegExp('^' + workNotes + '\\.');
   const regexEmailConversation = new RegExp('^' + emailConversation + '\\.');
+
+  const isWorkNotesAvailable = data.isWorkNotesAvailable || input.isWorkNotesAvailable;
+  const isAdditionalCommentsAvailable = data.isAdditionalCommentsAvailable || input.isAdditionalCommentsAvailable;
 
   while (activity.next()) {
     lastFoundActivityRecordId = activity.sys_id.toString();
@@ -234,11 +247,11 @@ function getActivitiesData() {
         continue;
       }
       addActivityRecord(activity, 'history', filteredHistoryFields, activityTargetItemLink);
-    } else if (activityTypeName.match(regexWorkNotess) && data.can_read_work_notes) {
+    } else if (activityTypeName.match(regexWorkNotess) && isWorkNotesAvailable) {
       activityContent = JSON.parse(activityContent);
       const content = activityContent.message.display_value || activityContent.message;
       addActivityRecord(activity, 'work-notes', content, activityTargetItemLink);
-    } else if (activityTypeName.match(regexAdditionalComments)) {
+    } else if (activityTypeName.match(regexAdditionalComments) && isAdditionalCommentsAvailable) {
       activityContent = JSON.parse(activityContent);
       const content = activityContent.message.display_value || activityContent.message;
       addActivityRecord(activity, 'additional-comments', content, activityTargetItemLink);
@@ -353,6 +366,8 @@ function getCurrentLangChoiceFieldDisplayValue(tableId, columnId, dbValue, displ
 }
 
 function translateBoolValue(displayValue) {
+  const userLanguage = new SimpleUser().getContext().language_id.language;
+
   displayValue = displayValue.toString().toLowerCase();
   if (userLanguage === 'ru') {
     if (displayValue === 'false' || displayValue === 'no') {
@@ -459,37 +474,39 @@ function getAvailableColumns() {
 }
 
 function getAvailableColumnIds() {
-  const prefix = input.table_name === 'c_presale_task' || input.table_name === 'c_presale_order' ? 'presale' : 'dvt';
-
   return ss
-    .getProperty(`${prefix}.activity_column_filter_ids`)
+    .getProperty(`${getPropertyPrefix()}.activity_column_filter_ids`)
     .replace(/\s+/g, '')
     .split(',')
-    .filter((id) => id);
+    .filter(id => id);
+}
+
+function getPropertyPrefix() {
+  if (input.table_name === 'c_presale_task' || input.table_name === 'c_presale_order') {
+    return 'presale';
+  }
+
+  return 'dvt';
 }
 
 function addDeadlineData() {
   const history = new SimpleRecord('sys_history');
-  history.addQuery('record_id', input.record_id);
   history.addQuery('table_name', input.table_name);
+  history.addQuery('record_id', input.record_id);
   history.addQuery('field_name', 'planned_end_datetime');
   history.query();
 
   while (history.next()) {
-    const content = [
-      {
-        display_title: 'Плановая дата/время окончания',
-        new_display_value: history.new_value
-          ? new SimpleDateTime(history.new_value).getDisplayValue()
-          : history.new_value,
-        old_display_value: history.old_value
-          ? new SimpleDateTime(history.old_value).getDisplayValue()
-          : history.old_value,
-      },
-    ];
+    const content = [{
+      display_title: 'Плановая дата/время окончания',
+      new_display_value: history.new_value ? new SimpleDateTime(history.new_value).getDisplayValue() : history.new_value,
+      old_display_value: history.old_value ? new SimpleDateTime(history.old_value).getDisplayValue() : history.old_value,
+    }];
 
     addActivityRecord(history, 'deadline', content, '');
   }
+
+  data.isDeadlineAvailable = true;
 }
 
 function addActivityRecord(record, type, content, activityTargetItemLink) {
@@ -527,7 +544,6 @@ function escapeSpecialSymbols(text) {
     '"': '&quot;',
     "'": '&#039;',
   };
-  return text.replace(/[&<>"']/g, function (m) {
-    return map[m];
-  });
+
+  return text.replace(/[&<>"']/g, symbol => map[symbol]);
 }
