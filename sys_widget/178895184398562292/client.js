@@ -369,8 +369,8 @@ function composeEmailConversationTemplate(emailData) {
         <div><span class="user-title">Дата:</span> ${creationDateTime}</div>
         <div><span class="user-title">Тема:</span>  ${sanitizeEmailSubject}</div>
         <div id="${emailId}" class="show-email-button">
-          <button event-click="s_widget_custom.showEmailBodyModal('${emailId}');">Показать письмо</button>
-          <button class="show-email-link" event-click="s_widget_custom.openEmailLink('${emailId}');" hint="Открыть ориг. письмо в новой вкладке">${OPEN_LINK_ICON_SVG}</button>
+          <button event-click="s_widget_custom.showEmailBodyModal('${emailId}')">Показать письмо</button>
+          <button class="show-email-link" event-click="s_widget_custom.openEmailLink('${emailId}')" hint="Открыть ориг. письмо в новой вкладке">${OPEN_LINK_ICON_SVG}</button>
         </div>
       </div>
     </div>
