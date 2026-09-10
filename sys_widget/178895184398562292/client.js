@@ -270,6 +270,10 @@ function getHint(type) {
     return '{data.translations.show_work_notes}';
   }
 
+  if (type === 'email') {
+    return '{data.translations.show_email_conversation}';
+  }
+
   return '';
 }
 
@@ -309,12 +313,12 @@ function composeDeadlineTemplate(data) {
 
 function composeHistoryTemplate(data) {
   return `
-        ${composeActivityGroupTemplate(data.sys_created_at_display)}
-        <div class="activity-item">
-            ${composeActivityItemHeadTemplate(data)}
-            ${composeHistoryItemListTemplate(data.content)}
-        </div>
-    `.trim();
+    ${composeActivityGroupTemplate(data.sys_created_at_display)}
+    <div class="activity-item">
+      ${composeActivityItemHeadTemplate(data)}
+      ${composeHistoryItemListTemplate(data.content)}
+    </div>
+  `.trim();
 }
 
 function composeHistoryItemListTemplate(itemList) {
@@ -330,20 +334,21 @@ function composeHistoryItemTemplate(item) {
   const oldValue = item.old_display_value;
 
   return `
-        <div class="activity-history">
-            <div class="history-item-new">
-                <div class="item-new-title">${title}</div>
-                <div class="item-new-text">${newValue}</div>
-            </div>
-            <div class="history-item-old">
-                <div class="item-old-title">${title}</div>
-                <div class="item-old-text">${oldValue}</div>
-            </div>
-        </div>
-    `.trim();
+    <div class="activity-history">
+      <div class="history-item-new">
+        <div class="item-new-title">${title}</div>
+        <div class="item-new-text">${newValue}</div>
+      </div>
+      <div class="history-item-old">
+        <div class="item-old-title">${title}</div>
+        <div class="item-old-text">${oldValue}</div>
+      </div>
+    </div>
+  `.trim();
 }
 
 function composeEmailConversationTemplate(emailData) {
+  const type = emailData.activity_type;
   const emailId = emailData.sys_id;
   const creationDateTime = emailData.sys_created_at_display;
   const sanitizeEmailSubject = emailData.subject;
@@ -358,7 +363,7 @@ function composeEmailConversationTemplate(emailData) {
 			<div class="email-item-semi-header">
 				<div><span class="user-title">От:</span> ${emailData.from}</div>
 				<div class="activity-content-icon-email">
-					<button buttonType="icon" hint="{data.translations.show_email_conversation}" event-click="s_widget_custom.filter('email')">${EMAIL_ICON_EMJ}</button>
+					<button buttonType="icon" hint="${getHint(type)}" event-click="s_widget_custom.filter('${type}')">${getEmoji(type)}</button>
 				</div>
 			</div>
 			<div><span class="user-title">Кому:</span> ${emailData.to}</div>
@@ -375,24 +380,24 @@ function composeEmailConversationTemplate(emailData) {
 
 function composeCommentsTemplate(data) {
   return `
-        ${composeActivityGroupTemplate(data.sys_created_at_display)}
-        <div class="activity-item">
-            ${composeActivityItemHeadTemplate(data)}
-            <div class="activity-info">
-                <div class="comment-message ${data.activity_type === 'additional-comments' ? 'additional-comment-st' : 'work-notes-st'}">${data.content.replace(/\n/g, '<br/>')}</div>
-            </div>
-        </div>
-    `.trim();
+    ${composeActivityGroupTemplate(data.sys_created_at_display)}
+    <div class="activity-item">
+      ${composeActivityItemHeadTemplate(data)}
+      <div class="activity-info">
+        <div class="comment-message ${data.activity_type === 'additional-comments' ? 'additional-comment-st' : 'work-notes-st'}">${data.content.replace(/\n/g, '<br/>')}</div>
+      </div>
+    </div>
+  `.trim();
 }
 
 function composeShowMoreTemplate(index) {
   return `
-        <div class="activity-item show-more" data-type="show-more">
-            <div class="show-more-content" event-click="s_widget_custom.showMoreContent(event, ${index})">
-                <span>Показать больше</span>
-            </div>
-        </div>
-    `.trim();
+    <div class="activity-item show-more" data-type="show-more">
+      <div class="show-more-content" event-click="s_widget_custom.showMoreContent(event, ${index})">
+        <span>Показать больше</span>
+      </div>
+    </div>
+  `.trim();
 }
 
 function countEmailAttachments(amount) {
