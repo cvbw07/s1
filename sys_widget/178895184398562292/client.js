@@ -348,10 +348,9 @@ function composeHistoryItemTemplate(item) {
 function composeEmailConversationTemplate(emailData) {
   const type = emailData.activity_type;
   const emailId = emailData.sys_id;
-  const creationDateTime = emailData.sys_created_at_display;
-  const sanitizeEmailSubject = emailData.subject;
+
   return `
-    ${composeActivityGroupTemplate(creationDateTime)}
+    ${composeActivityGroupTemplate(emailData.sys_created_at_display)}
     <div class="email-item">
       <div class="email-icon">
         <span>${EMAIL_SVG}</span>
@@ -366,8 +365,8 @@ function composeEmailConversationTemplate(emailData) {
         </div>
         <div><span class="user-title">Кому:</span> ${emailData.to}</div>
         <div><span class="user-title">Копия:</span> ${emailData.carbon_copy}</div>
-        <div><span class="user-title">Дата:</span> ${creationDateTime}</div>
-        <div><span class="user-title">Тема:</span>  ${sanitizeEmailSubject}</div>
+        <div><span class="user-title">Дата:</span> ${emailData.sys_created_at_display}</div>
+        <div><span class="user-title">Тема:</span> ${emailData.subject}</div>
         <div id="${emailId}" class="show-email-button">
           <button event-click="s_widget_custom.showEmailBodyModal('${emailId}')">Показать письмо</button>
           <button class="show-email-link" event-click="s_widget_custom.openEmailLink('${emailId}')" hint="Открыть ориг. письмо в новой вкладке">${OPEN_LINK_ICON_SVG}</button>
