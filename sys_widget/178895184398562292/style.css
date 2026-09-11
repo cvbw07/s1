@@ -268,50 +268,12 @@ button svg {
 }
 
 .activity-content-icon {
-  color: #0068b3;
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 600;
-  padding: 4px;
-  border-radius: 4px;
   margin-left: auto;
-  text-align: right;
-  white-space: nowrap;
-  align-self: center;
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 4px;
 }
 
-.activity-content-icon-email {
-  height: 20px;
-  width: 40px;
-  padding: 0;
-  color: #0068b3;
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 600;
-  margin-left: auto;
-  text-align: center;
-  margin-right: 4px;
-}
-
-.activity-content-icon-email>button {
+.activity-content-icon>button {
   width: 24px;
   height: 24px;
-}
-
-.activity-content-icon svg,
-.activity-content-icon-email svg {
-  display: block;
-  width: 20px;
-  height: 20px;
-  fill: #0068b3;
-}
-
-.activity-content-icon svg path,
-.activity-content-icon-email svg path {
-  fill: #0068b3;
 }
 
 .activity-comment-text {

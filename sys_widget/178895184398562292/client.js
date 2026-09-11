@@ -112,6 +112,11 @@ let currentActivityRecordList;
 async function init() {
   const startTime = Date.now();
 
+  await s_i18n.getMessage('Activity Feed', message => {
+    s_widget.setFieldValue('translations', { activity_feed_title: message });
+    s_widget.setFieldValue('isActivityVisible', true);
+  });
+
   toggleLoaderVisibility();
 
   if (s_form.getTableName() === 'itsm_infosys_task') {
@@ -123,6 +128,7 @@ async function init() {
 
   await updateServer('INIT');
 
+  s_widget.setFieldValue('isAddCommentButtonDisabled', true);
   s_widget.setFieldValue('isCommentHintVisible', s_widget.getFieldValue('isAdditionalCommentsAvailable') && s_form.getTableName() !== 'c_zapad_task');
   s_widget.setFieldValue('isCommentBlockVisible', s_widget.getFieldValue('commentTypeOptions').length !== 0);
   s_widget.setFieldValue('isWorkNotesTabVisible', s_widget.getFieldValue('isWorkNotesAvailable'));
@@ -236,7 +242,7 @@ function composeActivityItemHeadTemplate(data) {
           <div class="activity-date">${data.sys_created_at_display}</div>${data.target_item_link ? `&nbsp${data.target_item_link}` : ''}
         </div>
       </div>
-      <div class="activity-content-icon"
+      <div class="activity-content-icon">
         <button buttonType="icon" hint="${getHint(type)}" event-click="s_widget_custom.filter('${type}')">${getEmoji(type)}</button>
       </div>
     </div>
@@ -359,7 +365,7 @@ function composeEmailConversationTemplate(emailData) {
       <div class="email-container">
         <div class="email-item-semi-header">
           <div><span class="user-title">От:</span> ${emailData.from}</div>
-          <div class="activity-content-icon-email">
+          <div class="activity-content-icon">
             <button buttonType="icon" hint="${getHint(type)}" event-click="s_widget_custom.filter('${type}')">${getEmoji(type)}</button>
           </div>
         </div>
