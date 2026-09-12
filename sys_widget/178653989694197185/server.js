@@ -58,7 +58,7 @@ let emailConversation = 'email_conversation';
     data.duration = '';
 
     const { database_value: commentType } = input.commentTypeOption;
-    const comment = getComment(input.comment, input.duration, task.getDisplayValue('c_trz_type'));
+    const comment = getComment(input.comment, input.duration, record.getDisplayValue('c_trz_type'));
 
     if (commentType === 'work-notes') {
       record[workNotes] = comment;
