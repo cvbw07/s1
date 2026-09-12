@@ -80,11 +80,11 @@ let currentActivityRecordList;
   }
 
   s_widget_custom.addComment = async () => {
+    s_widget.setFieldValue('isAddCommentButtonDisabled', true);
     document.getElementById('activity-feed').insertAdjacentHTML('afterbegin', LOADER);
     s_widget.setFieldValue('activity_records_count', activityObject.activity_records.length.toString());
     s_widget.setFieldValue('activity_object', JSON.stringify(activityObject));
     await updateServer('ADD_COMMENT');
-    s_widget.setFieldValue('isAddCommentButtonDisabled', true);
     setGlabalVariables();
     filterActivities();
     updateActivityFeedItems();
