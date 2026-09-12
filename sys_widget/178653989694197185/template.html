@@ -1,4 +1,4 @@
-<div id="activity-box" class="activity-main">
+<div id="activity-box" class="activity-main" simple-if="{data.isActivityVisible}">
   <div class="activity-header">
     <div class="activity-header-column" event-click="s_widget_custom.toggleActivityContentVisibility()">
       <div class="activity-header-title">{data.translations.activity_feed_title} ({data.activity_records_count})</div>
@@ -44,6 +44,7 @@
         <select radioButtonsMode="true" class="select-work-note-or-comment" model="data.commentTypeOption" options="{data.commentTypeOptions}"></select>
         <span class="comment-block-flex-first-row-btn">
           <button simple-if="{data.isCommentHintVisible}"
+            buttonType="icon-mini"
             class="src-components-button-___styles-module__IconMini___DVKTd src-components-dynamicForms-view-fieldWrapper-___styles-module__BtnIcon___rzdZS"
             type="button"
             tabindex="20"

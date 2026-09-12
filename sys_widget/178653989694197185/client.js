@@ -143,12 +143,12 @@ let currentActivityRecordList;
   }
 
   s_widget_custom.addComment = async () => {
+    s_widget.setFieldValue('isDurationMandatory', false);
+    s_widget.setFieldValue('isAddCommentButtonDisabled', true);
     document.getElementById('activity-feed').insertAdjacentHTML('afterbegin', LOADER);
     s_widget.setFieldValue('activity_records_count', activityObject.activity_records.length.toString());
     s_widget.setFieldValue('activity_object', JSON.stringify(activityObject));
     await updateServer('ADD_COMMENT');
-    s_widget.setFieldValue('isDurationMandatory', false);
-    s_widget.setFieldValue('isAddCommentButtonDisabled', true);
     setGlabalVariables();
     filterActivities();
     updateActivityFeedItems();
@@ -185,12 +185,16 @@ let currentActivityRecordList;
 async function init() {
   const startTime = Date.now();
 
+  await s_i18n.getMessage('Activity Feed', message => {
+    s_widget.setFieldValue('translations', { activity_feed_title: message });
+    s_widget.setFieldValue('isActivityVisible', true);
+  });
+
   toggleLoaderVisibility();
 
   initToggleOldValueVisibilityButton();
   initToggleLogModeButton();
   initToggleOrderButton();
-  initAddCommentButton();
 
   if (s_form.getTableName() === 'itsm_infosys_task') {
     document.getElementById('activity-box').classList.add('m-w-100-important');
@@ -201,6 +205,7 @@ async function init() {
 
   await updateServer('INIT');
 
+  s_widget.setFieldValue('isAddCommentButtonDisabled', true);
   s_widget.setFieldValue('isCommentHintVisible', s_widget.getFieldValue('isAdditionalCommentsAvailable'));
   s_widget.setFieldValue('isCommentBlockVisible', s_widget.getFieldValue('commentTypeOptions').length !== 0);
   s_widget.setFieldValue('isWorkNotesTabVisible', s_widget.getFieldValue('isWorkNotesAvailable'));
@@ -265,10 +270,6 @@ function initToggleOrderButton() {
 
   s_widget.setFieldValue('isOrderReversed', isOrderReversed);
   s_widget.setFieldValue('isOrderNotReversed', !isOrderReversed);
-}
-
-function initAddCommentButton() {
-  s_widget.setFieldValue('isAddCommentButtonDisabled', true);
 }
 
 function setGlabalVariables() {
@@ -364,7 +365,7 @@ function composeActivityItemTemplate(data) {
           </div>
         </div>
         <div class="activity-content-icon" simple-if="{data.isModeOff}">
-          <button buttonType="icon-mini" hint="${getHint(type)}" event-click="s_widget_custom.filter('${type}')">${getEmoji(type)}</button>
+          <button buttonType="icon" hint="${getHint(type)}" event-click="s_widget_custom.filter('${type}')">${getEmoji(type)}</button>
         </div>
         <div id="activity-chevron-${data.sys_id}" class="activity-chevron ${isNone ? '' : 'rotate90'}" simple-if="{data.isModeOn}" event-click="s_widget_custom.toggleActivityItemBodyVisibility('${data.sys_id}')">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

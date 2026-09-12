@@ -313,6 +313,11 @@ button svg {
   margin-left: auto;
 }
 
+.activity-content-icon>button {
+  width: 24px;
+  height: 24px;
+}
+
 .activity-comment-text {
   display: inline;
   vertical-align: middle;
